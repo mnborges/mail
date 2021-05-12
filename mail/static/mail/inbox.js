@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
   document.querySelector('#compose').addEventListener('click', compose_email);
-
+	
   // By default, load the inbox
   load_mailbox('inbox');
 });
@@ -70,38 +70,34 @@ function load_mailbox(mailbox) {
 		if (emails.error != undefined){
 			return alert(emails.error);
 		}else {
-			emails.forEach((email)=> add_to_mailbox(email));
+			emails.forEach((email)=> add_to_mailbox(email, mailbox));
 		}
 	});
 }
-function add_to_mailbox(email){
+function add_to_mailbox(email, mailbox){
 	//New elements 
 	const div = document.createElement('div');
 	const tm = document.createElement('div');
 	const sub = document.createElement('div');
 	const from = document.createElement('div');
-	const a = document.createElement('a');
-	//const archive_button = document.createElement('button');
+	const archive_button = document.createElement('button');
 	
 	//define elements class
 	div.className = 'row border p-2';
 	from.className = 'col-lg-3 col-sm-12';
 	sub.className = 'col-lg-6 col-sm-12';
 	tm.className = 'col-lg-3 col-sm-12';
-	a.className = 'card-link m-0';
-	//archive_button.className = 'btn btn-sm btn-outline-primary float-right';
+	archive_button.className = 'btn btn-sm btn-outline-primary pt-0 pb-0 float-right';
 	
 	//define content and additional style to elements
-	/*
-	archive_button.innerHTML = '<i class="fas fa-archive"></i>';
-	archive_button.title = 'Archive';
-	
-	archive_button.addEventListener('click', (archive_button) => {
-		read_archive(email.id, 'archived', true);
-		return (load_mailbox('inbox'));
-	}); */
-	a.href = '#';
-	a.addEventListener('click', () => getEmail(email.id));
+	div.style.animationPlayState = 'paused';
+	archive_button.innerHTML = "<i class='fas fa-archive'></i>";
+	archive_button.style.display = 'none';
+	if (mailbox === 'inbox'){
+		archive_button.title = 'Archive';
+	}else{
+		archive_button.title = 'Unarchive';
+	}
 	tm.innerHTML = email.timestamp;
 	tm.style.color = '#686868'
 	sub.innerHTML = email.subject;
@@ -111,14 +107,35 @@ function add_to_mailbox(email){
 	}else{
 		div.style.backgroundColor = 'white';
 	}
-	
 	//add elements to their parent element
-	a.append(div);
-	//tm.append(archive_button);
 	div.append(from);
 	div.append(sub);
 	div.append(tm);
-	document.querySelector('#emails-view').append(a);
+	document.querySelector('#emails-view').append(div);
+	
+	//show archive icon only when mouse is over the div
+	if (mailbox != 'sent') tm.append(archive_button);
+	div.addEventListener('mouseover', () => {
+		archive_button.style.display = 'block';
+	});
+	div.addEventListener('mouseout', () => {
+		archive_button.style.display = 'none';
+	});
+	
+	// trigger event to show email content
+	div.addEventListener('click', (event) => {
+		getEmail(email.id);
+	}); 
+	
+	//trigger event to archive mail
+	archive_button.addEventListener('click', (event) => {
+		if (!event) event = window.event;
+		event.stopPropagation(); //dont trigger div click event
+		if (mailbox === 'inbox') read_archive(email.id, 'archived', true);
+		if (mailbox === 'archive') read_archive(email.id, 'archived', false);
+		div.style.animationPlayState = 'running';
+		div.onanimationend = () => load_mailbox('inbox');
+	});
 }
 function getEmail(email_id){
 	document.querySelector('#emails-view').style.display = 'none';
