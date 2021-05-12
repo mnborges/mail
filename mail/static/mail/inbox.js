@@ -32,17 +32,27 @@ window.onpopstate = function(event) {
 		getEmail(event.state.page);
 	}
 }
-function compose_email() {
+function compose_email(reply) {
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-content').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
 
   // Clear out composition fields
-  document.querySelector('#compose-recipients').value = '';
-  document.querySelector('#compose-subject').value = '';
-  document.querySelector('#compose-body').value = '';
-  
+  if(!reply){
+	  document.querySelector('#compose-recipients').value = '';
+	  document.querySelector('#compose-subject').value = '';
+	  document.querySelector('#compose-body').value = '';
+  }else{
+		document.querySelector('#compose-recipients').value = reply.sender;
+		if(reply.subject.substring(0,3) != 'Re:') document.querySelector('#compose-subject').value = `Re: ${reply.subject}`;
+		else  document.querySelector('#compose-subject').value = reply.subject;
+		//sub = reply.subject;
+		document.querySelector('#compose-body').value = `\n\nOn ${reply.timestamp} ${reply.sender} wrote:\n${reply.body}` ;
+	//console.log(sub);
+	//if(sub.substring(0,3) != 'Re:') document.querySelector('#compose-subject').value = `Re: ${sub}`;
+	//else  document.querySelector('#compose-subject').value = sub;
+  }	
   // Send new email
   document.querySelector('#compose-form').onsubmit = () => {
 	  const recipient = document.querySelector('#compose-recipients').value;
@@ -184,8 +194,9 @@ function getEmail(email_id){
 			const reply = document.createElement('button');
 			const archive = document.createElement('button');
 			const eheader = document.createElement('div');
-			const ebody = document.createElement('div');
-			
+			const bd = document.createElement('div');
+			const ebody = document.createElement('pre');
+			bd.append(ebody);
 			//elements' classes and contents
 			reply.className = 'btn btn-sm btn-outline-primary float-right m-1';
 			archive.className = 'btn btn-sm btn-outline-primary float-right m-1';
@@ -205,7 +216,7 @@ function getEmail(email_id){
 			document.querySelector('#email-content').append(reply);
 			document.querySelector('#email-content').append(archive);
 			document.querySelector('#email-content').append(eheader);
-			document.querySelector('#email-content').append(ebody);
+			document.querySelector('#email-content').append(bd);
 			
 			archive.addEventListener('click', (event) => {
 				//let e;
@@ -224,6 +235,9 @@ function getEmail(email_id){
 				//location.reload();
 			});
 			
+			reply.addEventListener('click', () => {
+				compose_email(email);
+			});
 		}	
 	});
 	return false;
