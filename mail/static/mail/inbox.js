@@ -1,17 +1,38 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // Use buttons to toggle between views
-  document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
-  document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
-  document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
-  document.querySelector('#compose').addEventListener('click', compose_email);
+  document.querySelector('#inbox').addEventListener('click', () => {
+	  history.pushState({page : document.querySelector('#inbox').dataset.page}, '' , '#inbox'); //update url
+	  load_mailbox('inbox');
+  });
+  document.querySelector('#sent').addEventListener('click', () =>{
+	  history.pushState({page : document.querySelector('#sent').dataset.page}, '' , '#sent');
+	  load_mailbox('sent');
+  });
+  document.querySelector('#archive').addEventListener('click', () =>{
+	  history.pushState({page : document.querySelector('#archive').dataset.page}, '' , '#archive');
+	  load_mailbox('archive');
+  });
+  document.querySelector('#compose').addEventListener('click', () => {
+	 history.pushState({page : document.querySelector('#compose').dataset.page}, '' , '#compose');
+	 compose_email();
+  });
 	
   // By default, load the inbox
   load_mailbox('inbox');
 });
-
+window.onpopstate = function(event) {
+    //console.log(event.state.page);
+	const page = event.state.page;
+	if (page === 'compose'){
+		compose_email();
+	}else if (page === 'inbox' || page === 'archive' || page === 'sent'){
+		load_mailbox(`${page}`);
+	}else{
+		getEmail(event.state.page);
+	}
+}
 function compose_email() {
-	
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-content').style.display = 'none';
@@ -52,7 +73,7 @@ function compose_email() {
 }
 
 function load_mailbox(mailbox) {
-  
+	
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
@@ -83,13 +104,14 @@ function add_to_mailbox(email, mailbox){
 	const archive_button = document.createElement('button');
 	
 	//define elements class
-	div.className = 'row border p-2';
+	div.className = 'row border p-2 pointer';
 	from.className = 'col-lg-3 col-sm-12';
 	sub.className = 'col-lg-6 col-sm-12';
 	tm.className = 'col-lg-3 col-sm-12';
 	archive_button.className = 'btn btn-sm btn-outline-primary pt-0 pb-0 float-right';
 	
 	//define content and additional style to elements
+	div.setAttribute('data-page', `email${email.id}`); 
 	div.style.animationPlayState = 'paused';
 	archive_button.innerHTML = "<i class='fas fa-archive'></i>";
 	archive_button.style.display = 'none';
@@ -123,7 +145,8 @@ function add_to_mailbox(email, mailbox){
 	});
 	
 	// trigger event to show email content
-	div.addEventListener('click', (event) => {
+	div.addEventListener('click', () => {
+		history.pushState({page: div.dataset.page}, '' ,`#email=${email.id}`);
 		getEmail(email.id);
 	}); 
 	
@@ -138,6 +161,7 @@ function add_to_mailbox(email, mailbox){
 	});
 }
 function getEmail(email_id){
+	
 	document.querySelector('#emails-view').style.display = 'none';
 	document.querySelector('#compose-view').style.display = 'none';
 	document.querySelector('#email-content').style.display = 'block';
@@ -168,7 +192,9 @@ function getEmail(email_id){
 			reply.value='reply';
 			archive.value='archive';
 			reply.innerHTML='Reply';
-			archive.innerHTML='Archive';
+			if (!email.archived) archive.innerHTML='Archive';
+			else archive.innerHTML='Unarchive';
+			
 			eheader.innerHTML = `<strong>From:</strong> ${email.sender}<br> 
 				<strong>To: </strong>${email.recipients}<br> 
 				<strong>Subject: </strong> ${email.subject}<br>
@@ -180,6 +206,23 @@ function getEmail(email_id){
 			document.querySelector('#email-content').append(archive);
 			document.querySelector('#email-content').append(eheader);
 			document.querySelector('#email-content').append(ebody);
+			
+			archive.addEventListener('click', (event) => {
+				//let e;
+				if (email.archived){
+					//e = read_archive(email.id, 'archived', false);
+					read_archive(email.id, 'archived', false);
+					console.log('unarchived');
+				
+				} 
+				else {
+					//e = read_archive(email.id, 'archived', true);
+					read_archive(email.id, 'archived', true);
+					console.log('archived');
+				}
+				//history.go(0); //RELOAD EMAIL
+				//location.reload();
+			});
 			
 		}	
 	});

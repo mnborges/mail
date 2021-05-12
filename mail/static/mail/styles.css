@@ -20,10 +20,14 @@ textarea {
 }
 .row:hover{
 	box-shadow: 0 0 .5em black;
+	
 }
 .row{
 	animation-name: fade;
     animation-duration: 1s;
     animation-fill-mode: forwards;
     animation-play-state: paused;
+}
+.pointer{
+	cursor: pointer; 
 }
