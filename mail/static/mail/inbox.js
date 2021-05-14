@@ -14,11 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	  load_mailbox('archive');
 	});
 	document.querySelector('#compose').addEventListener('click', () => {
-	 history.pushState({page : document.querySelector('#compose').dataset.page}, '' , '#compose');
+	 history.pushState({page : document.querySelector('#compose').dataset.page}, '' , '#compose?new');
 	 compose_email();
 	});
 		
 	// By default, load the inbox
+	history.pushState({page : document.querySelector('#inbox').dataset.page}, '' , '#inbox');
 	load_mailbox('inbox');
 	
 	// console.log() were commented
@@ -34,8 +35,13 @@ window.onpopstate = function(event) {
 		compose_email();
 	}else if (page === 'inbox' || page === 'archive' || page === 'sent'){
 		load_mailbox(`${page}`);
-	}else{
-		getEmail(event.state.page);
+	}else if(page.substring(0,5) === 'email'){
+		getEmail(page.substring(6,));
+	}else if(page.substring(0,5) === 'reply'){
+		const reply = page.substring(6,);
+		fetch(`/emails/${reply}`)
+		.then(response => response.json())
+		.then(email => {compose_email(email)});
 	}
 }
 function compose_email(reply) {
@@ -78,6 +84,7 @@ function compose_email(reply) {
 				alert(`${result.error}`);
 			}else{
 				//console.log(`${result.message}`);
+				history.pushState({page : document.querySelector('#sent').dataset.page}, '' , '#sent');
 				load_mailbox('sent');
 			}
 		});
@@ -136,7 +143,7 @@ function add_to_mailbox(email, mailbox){
 	read_button.className = archive_button.className;
 	
 	//define content and additional style to elements
-	div.setAttribute('data-page', `email${email.id}`); 
+	div.setAttribute('data-page', `email=${email.id}`); 
 	div.style.animationPlayState = 'paused';
 	archive_button.innerHTML = "<i class='fas fa-archive'></i>";
 	archive_button.style.display = 'none';
@@ -193,7 +200,10 @@ function add_to_mailbox(email, mailbox){
 		read_archive(email.id, 'archived', !email.archived);
 		const fade = div.getAnimations()[0]; //animation declared in the .css file
 		fade.play();
-		fade.onfinish = () => load_mailbox('inbox');
+		fade.onfinish = () => {
+			if (mailbox != 'inbox') history.pushState({page : document.querySelector('#inbox').dataset.page}, '' , '#inbox'); 
+			load_mailbox('inbox');
+		}
 	});
 	//event to mark email as read/unread 
 	read_button.addEventListener('click', (event) => {
@@ -242,6 +252,7 @@ function getEmail(email_id){
 			reply.className = 'btn btn-sm btn-outline-primary float-right m-1';
 			archive.className = 'btn btn-sm btn-outline-primary float-right m-1';
 			reply.value='reply';
+			reply.setAttribute('data-page', `reply=${email.id}`); 
 			archive.value='archive';
 			reply.innerHTML='Reply';
 			if (!email.archived) archive.innerHTML='Archive';
@@ -269,7 +280,8 @@ function getEmail(email_id){
 			});
 			
 			//reply => compose email with pre-filled info
-			reply.addEventListener('click', () => {
+			reply.addEventListener('click', () => {	
+				history.pushState({page : reply.dataset.page}, '' , `#compose?reply=${email.id}`);
 				compose_email(email);
 			});
 			
