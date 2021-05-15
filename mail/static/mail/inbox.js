@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 		
 	// By default, load the inbox
+	history.pushState({page : document.querySelector('#inbox').dataset.page}, '' , '#inbox');
 	load_mailbox('inbox');
 	
 	// console.log() were commented
@@ -83,6 +84,7 @@ function compose_email(reply) {
 				alert(`${result.error}`);
 			}else{
 				//console.log(`${result.message}`);
+				history.pushState({page : document.querySelector('#sent').dataset.page}, '' , '#sent');
 				load_mailbox('sent');
 			}
 		});
@@ -198,7 +200,10 @@ function add_to_mailbox(email, mailbox){
 		read_archive(email.id, 'archived', !email.archived);
 		const fade = div.getAnimations()[0]; //animation declared in the .css file
 		fade.play();
-		fade.onfinish = () => load_mailbox('inbox');
+		fade.onfinish = () => {
+			if (mailbox != 'inbox') history.pushState({page : document.querySelector('#inbox').dataset.page}, '' , '#inbox'); 
+			load_mailbox('inbox');
+		}
 	});
 	//event to mark email as read/unread 
 	read_button.addEventListener('click', (event) => {
